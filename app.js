@@ -2,7 +2,7 @@ import express from 'express';
 import fetch from 'node-fetch';
 import cors from 'cors';
 
-import { FileSystem } from '../../cristiano-miranda-async-js/filesystem.js'
+import { FileSystem } from './filesystem.js'
 
 const backEnd = express();
 const port = 3000;
@@ -11,11 +11,6 @@ const fileAccess = new FileSystem();
 
 backEnd.use(cors({
     origin: 'http://localhost:5173/',
-    /* 
-        !I am no longer using this method to send the file path!
-    // This header needs to be exposed to the user to provide the relative path that will be used for moving the invoice
-    exposedHeaders: 'x-invoice-organizer-file-path', 
-    */
 }))
 
 backEnd.get('/getDirectories', async (req, res) => {
