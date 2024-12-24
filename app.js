@@ -56,12 +56,16 @@ backEnd.post('/sortFile', async (req, res) => {
 
 backEnd.post('/createNewFolder', async (req, res) => {
     try {
+        let isSuccessful, transferMessage, undoObj;
         let requestQueryParameters = req.query;
 
-        // let [isSuccessful, transferMessage, undoObj] = await fileAccess.createNewFolder(requestQueryParameters)
-        // let actionId = (Date.now() * Math.random()).toString(16)
+        if (requestQueryParameters.pageName == 'CUSTOMER_SCANNED_DOCUMENTS') {
+            [isSuccessful, transferMessage, undoObj] = await fileAccess.createNewFolder(requestQueryParameters);
+        }
 
-        // res.send({result: isSuccessful ? 'Succeeded' : 'Failed', message: transferMessage, undoInfo: undoObj, id: actionId, action: 'Folder Creation'})
+        let actionId = (Date.now() * Math.random()).toString(16)
+
+        res.send({result: isSuccessful ? 'Succeeded' : 'Failed', message: transferMessage, undoInfo: undoObj, id: actionId, action: 'Folder Creation'})
     } catch (error) {
         console.error(`Error: ${error}`);
         res.status(500).send('Server Error');
