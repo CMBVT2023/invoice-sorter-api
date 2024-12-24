@@ -57,11 +57,11 @@ backEnd.post('/sortFile', async (req, res) => {
 backEnd.post('/createNewFolder', async (req, res) => {
     try {
         let requestQueryParameters = req.query;
-        
-        let [isSuccessful, transferMessage, undoObj] = await fileAccess.createNewFolder(requestQueryParameters)
-        let actionId = (Date.now() * Math.random()).toString(16)
 
-        res.send({result: isSuccessful ? 'Succeeded' : 'Failed', message: transferMessage, undoInfo: undoObj, id: actionId, action: 'Folder Creation'})
+        // let [isSuccessful, transferMessage, undoObj] = await fileAccess.createNewFolder(requestQueryParameters)
+        // let actionId = (Date.now() * Math.random()).toString(16)
+
+        // res.send({result: isSuccessful ? 'Succeeded' : 'Failed', message: transferMessage, undoInfo: undoObj, id: actionId, action: 'Folder Creation'})
     } catch (error) {
         console.error(`Error: ${error}`);
         res.status(500).send('Server Error');

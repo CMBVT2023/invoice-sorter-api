@@ -283,21 +283,21 @@ export class FileSystem {
     * @returns an array of three items, a boolean to signify if the initialized was successful, a string describing the outcome, and an object containing the information required to undo the action.
     */
     async createNewFolder(requestQueryParameters) {
-        let {customerFolderName, letterFolder} = requestQueryParameters;
+        let {directoryFolderName, letterFolder} = requestQueryParameters;
         try {
-            let newCustomerFolderPath = `${this._customerDirPath}/${letterFolder}/${customerFolderName}`
+            let newDirectoryFolderPath = `${this._customerDirPath}/${letterFolder}/${directoryFolderName}`
             
-            if ((await this._checkPath(newCustomerFolderPath))) throw new Error('Customer Folder Already Exists!', {cause: 'conflict'});
+            if ((await this._checkPath(newDirectoryFolderPath))) throw new Error('Customer Folder Already Exists!', {cause: 'conflict'});
 
-            let hasFolderCreationFailed = await fs.mkdir(newCustomerFolderPath);
+            let hasFolderCreationFailed = await fs.mkdir(newDirectoryFolderPath);
 
-            if (hasFolderCreationFailed) throw new Error(`Failed to create a directory at path ${newCustomerFolderPath}`);
+            if (hasFolderCreationFailed) throw new Error(`Failed to create a directory at path ${newDirectoryFolderPath}`);
 
-            return [true, `Initialization Successful - Customer Folder ${customerFolderName} Added to Directory.`, {customerName: customerFolderName, letterFolder}]
+            return [true, `Initialization Successful - Customer Folder ${directoryFolderName} Added to Directory.`, {directoryName: directoryFolderName, letterFolder}]
         } catch (error) {
             console.error(error)
-            if (error.cause == 'conflict') return [false, `Initialization Failed - Customer Folder ${customerFolderName} Already Exists!`]
-            return [false, `Initialization Failed - Failed to create ${customerFolderName} folder.`]
+            if (error.cause == 'conflict') return [false, `Initialization Failed - Customer Folder ${directoryFolderName} Already Exists!`]
+            return [false, `Initialization Failed - Failed to create ${directoryFolderName} folder.`]
         }
     }
 
