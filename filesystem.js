@@ -1,10 +1,9 @@
-import { error } from 'console';
 import * as fs from 'fs/promises';
 
 export class FileSystem {
     constructor() {
-        this._invoiceDirPath;
-        this._customerDirPath;
+        this._invoiceFolderPath;
+        this._directoriesFolderPath;
     }
 
     async loadDirectoryPaths(pathSettingsFile) {
@@ -12,10 +11,10 @@ export class FileSystem {
             let doesPathSettingsFileExist = await this._checkPath(pathSettingsFile);
             if (!doesPathSettingsFileExist) throw new Error('Unable to access settings file.')
 
-            let {invoicePath, customerFolderPath} = JSON.parse(await fs.readFile(pathSettingsFile));
+            let {invoicePath, directoriesFolderPath} = JSON.parse(await fs.readFile(pathSettingsFile));
 
-            this._invoiceDirPath = invoicePath;
-            this._customerDirPath = customerFolderPath;
+            this._invoiceFolderPath = invoicePath;
+            this._directoriesFolderPath = directoriesFolderPath;
 
             let [areMainDirectoriesValid, mainPathValidatorMessage] = await this._validateMainDirectories();
             if (!areMainDirectoriesValid) throw new Error(mainPathValidatorMessage);
@@ -31,15 +30,15 @@ export class FileSystem {
     }
 
     async _validateMainDirectories() {
-        let isCustomerFoldersPathValid = await this._checkPath(this._customerDirPath);
-        let isInvoiceDirectoryValid = await this._checkPath(this._invoiceDirPath);
-        if (isCustomerFoldersPathValid && isInvoiceDirectoryValid) return [true, 'All Main Directory Paths are valid.'];
+        let isDirectoriesFoldersPathValid = await this._checkPath(this._directoriesFolderPath);
+        let isInvoiceFolderPathValid = await this._checkPath(this._invoiceFolderPath);
+        if (isDirectoriesFoldersPathValid && isInvoiceFolderPathValid) return [true, 'All Main Directory Paths are valid.'];
 
         let errorMessage = 'Invalid Paths:\n';
         
         //? Checks that the two main directories exist within at their specified path else an error for them is thrown.
-        if (!isInvoiceDirectoryValid) errorMessage += `Invoice Directory does not exist - ${this._invoiceDirPath}\n`;
-        if (!isCustomerFoldersPathValid) errorMessage += `Customer Folders Directory does not exist - ${this._customerDirPath}\n`;
+        if (!isInvoiceFolderPathValid) errorMessage += `Invoice Directory does not exist - ${this._invoiceFolderPath}\n`;
+        if (!isDirectoriesFoldersPathValid) errorMessage += `Directories Folder does not exist - ${this._directoriesFolderPath}\n`;
         
         return [false, errorMessage];
     }
@@ -47,7 +46,7 @@ export class FileSystem {
     async _validateLetterFolders() {
         try {
             let alphabetArray = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
-            let letterFoldersPathArray = alphabetArray.map(letter => `${this._customerDirPath}/${letter}`);
+            let letterFoldersPathArray = alphabetArray.map(letter => `${this._directoriesFolderPath}/${letter}`);
             
             let pathValidatorResult;
             let invalidLetterFolder;
@@ -81,6 +80,12 @@ export class FileSystem {
         }
     } 
 
+    /**
+    * @method Determines if the passed path strings in the passed in array are valid paths. 
+    * @param {Array} pathArray - An array of paths strings that will be verified.
+    * @returns an array containing a boolean, true if the array contains all valid paths and false if one or more paths are invalid, and if an invalid path is found, the invalid path string is returned
+    * in teh array, otherwise this value will be null.
+    */
     async _validatePaths(pathArray) {
         try {
             for (const path of pathArray) {
@@ -120,23 +125,23 @@ export class FileSystem {
         }
     }
 
-    async getAllCustomerFolders() {
+    async getAllDirectories() {
         try {
-            //? First gathers the various letter folders within the customer folder directory
-            if (!(await this._checkPath(this._customerDirPath))) throw new Error('Customer Folder Directory path is invalid.');
-            let alphabetFolders = await fs.readdir(this._customerDirPath);
-            let customerFolders = [];
+            //? First gathers the various letter folders within the directories folder
+            if (!(await this._checkPath(this._directoriesFolderPath))) throw new Error('Directories Folder path is invalid.');
+            let alphabetFolders = await fs.readdir(this._directoriesFolderPath);
+            let allDirectories = [];
             //? Iterates through all of the letter folders
             for await (const letter of alphabetFolders) {
                 //* If the name of the folder is longer than one character, then it is not a letter folder and can be skipped over.
                 if (letter.length > 1) continue;
-                //? Appends an array of all customer folder names within the current letter folder
-                let customers = await fs.readdir(`${this._customerDirPath}/${letter}`);
-                customerFolders.push(customers);
+                //? Appends an array of all folder names within the current letter folder
+                let directoryContents = await fs.readdir(`${this._directoriesFolderPath}/${letter}`);
+                allDirectories.push(directoryContents);
             }
             
-            // Returns the array in alphabetical order of all the customer names.
-            return customerFolders;
+            //* Returns the array in alphabetical order of all the directory names within each letter folder.
+            return allDirectories;
         } catch (error) {
             console.error(error);
         }
@@ -145,7 +150,7 @@ export class FileSystem {
     async getInvoice(requestQueryParameters) {
         try {
             //? Reads the folder where all the invoice are located and looks for the first invoice in the list and saves it path as a string.
-            let invoiceFolder = await fs.readdir(this._invoiceDirPath);
+            let invoiceFolder = await fs.readdir(this._invoiceFolderPath);
             
             let invoicePath = '';
             let invoiceName = '';
@@ -153,7 +158,7 @@ export class FileSystem {
             let invoiceStat;
             do {
                 if (invoiceFolder.length <= offset) throw new Error('No Valid Files Within Invoice Directory.');
-                invoicePath = `${this._invoiceDirPath}/${invoiceFolder[offset]}`;
+                invoicePath = `${this._invoiceFolderPath}/${invoiceFolder[offset]}`;
                 invoiceName = invoiceFolder[offset]
                 offset++;
                 invoiceStat = await fs.stat(invoicePath)
@@ -173,15 +178,15 @@ export class FileSystem {
         }
     }
 
-    async _checkForYearFolder(customerFolderPath, year) {
+    async _checkForYearFolder(directoryFolderPath, year) {
         try {
-            let customerYearPath = `${customerFolderPath}/${year}`
-            if (!(await this._checkPath(customerYearPath))) {
-                let hasCreationFailed = await fs.mkdir(customerYearPath);
-                if (hasCreationFailed) throw new Error(`Failed to make a ${year} year directory within ${customerFolderPath}.`)
+            let directoryYearPath = `${directoryFolderPath}/${year}`
+            if (!(await this._checkPath(directoryYearPath))) {
+                let hasCreationFailed = await fs.mkdir(directoryYearPath);
+                if (hasCreationFailed) throw new Error(`Failed to make a ${year} year directory within ${directoryFolderPath}.`)
             }
 
-            return [true, customerYearPath];
+            return [true, directoryYearPath];
         } catch (error) {
             console.error(error)
             return [false, error.message];
@@ -227,20 +232,20 @@ export class FileSystem {
         let newInvoiceName = null;
         try {
     
-            //? Construct the paths for the customer folder and the invoice using the base paths specified.
-            let invoiceFilePath = `${this._invoiceDirPath}/${invoiceName}`;
-            let directoryFolderAbsolutePath = `${this._customerDirPath}/${directoryFolderPath}`;
+            //? Construct the folder paths for the storage directory and the invoice using the base paths specified.
+            let invoiceFilePath = `${this._invoiceFolderPath}/${invoiceName}`;
+            let directoryFolderAbsolutePath = `${this._directoriesFolderPath}/${directoryFolderPath}`;
             
-            //? Validate the invoice and customer folder path constructed above.
+            //? Validate the invoice and storage directory folder path constructed above.
             let [arePathsValid, invalidPath] = await this._validatePaths([directoryFolderAbsolutePath, invoiceFilePath])
             if (!arePathsValid) throw new Error(`Transfer Failed - ${invalidPath} does not exist!`);
             
-            //? Validate that a year folder already exist within the customer folder, and if not one is created.
+            //? Validate that a year folder already exist within the storage directory, and if not one is created.
             //! If any error results from attempting to create one the error is thrown to stop all proceeding code.
             let [isYearFolderCreated, yearFolderCheckResult] = await this._checkForYearFolder(directoryFolderAbsolutePath, year);
             if (!isYearFolderCreated) throw new Error(yearFolderCheckResult);
 
-            //? Cycles through the customer's folder to check if the current invoice name is already in use, and if so, cycles through copy numbers until and unused file name is found.
+            //? Cycles through the storage directory to check if the current invoice name is already in use, and if so, cycles through copy numbers until an unused file name is found.
             //* Once the new path is found, deconstruction is used to assign the new path and the new invoice name to variables.
             let invoiceToDirectory;
             [invoiceToDirectory, newInvoiceName] = await this._checkInvoiceFileName(yearFolderCheckResult, invoiceName);
@@ -255,7 +260,7 @@ export class FileSystem {
                         break;
                     }
                     case 'DestinationPathAlreadyInUse': {
-                        throw new Error(`Customer ${directoryName} folder already contains a ${newInvoiceName} invoice file.`)
+                        throw new Error(`Directory ${directoryName} already contains a ${newInvoiceName} invoice file.`)
                         break;
                     }
                     case 'failedToCopyFile': {
@@ -270,33 +275,33 @@ export class FileSystem {
             }
         } catch (error) {
             console.error(error)
-            let transferFailedMessage = `Transfer Failed - ${invoiceName} failed to transfer to ${customerName}.`
+            let transferFailedMessage = `Transfer Failed - ${invoiceName} failed to transfer to ${directoryName}.`
             if (newInvoiceName && newInvoiceName != invoiceName) transferFailedMessage += `\nAttempted to rename ${invoiceName} to ${newInvoiceName}.`
             return [false, transferFailedMessage];
         }
     }
 
     /**
-    * @method Initialized a new customer folder within the customer directory path. The customer folder is initialized based on the passed in query parameters gathered by a fetch request.
+    * @method Initialized a new directory within the directories folder path. The directory folder is initialized based on the passed in query parameters gathered by a fetch request.
     * A new path string is concatenated and check for potential conflicts.
-    * @param {object} requestQueryParameters - Query parameters used for creating the new customer folder's path string. It includes a customerName and letterFolder property.
+    * @param {object} requestQueryParameters - Query parameters used for creating the new directory's path string. It includes a directoryFolderName and letterFolder property.
     * @returns an array of three items, a boolean to signify if the initialized was successful, a string describing the outcome, and an object containing the information required to undo the action.
     */
     async createNewFolder(requestQueryParameters) {
         let {directoryFolderName, letterFolder} = requestQueryParameters;
         try {
-            let newDirectoryFolderPath = `${this._customerDirPath}/${letterFolder}/${directoryFolderName}`
+            let newDirectoryFolderPath = `${this._directoriesFolderPath}/${letterFolder}/${directoryFolderName}`
             
-            if ((await this._checkPath(newDirectoryFolderPath))) throw new Error('Customer Folder Already Exists!', {cause: 'conflict'});
+            if ((await this._checkPath(newDirectoryFolderPath))) throw new Error('Directory Already Exists!', {cause: 'conflict'});
 
             let hasFolderCreationFailed = await fs.mkdir(newDirectoryFolderPath);
 
             if (hasFolderCreationFailed) throw new Error(`Failed to create a directory at path ${newDirectoryFolderPath}`);
 
-            return [true, `Initialization Successful - Customer Folder ${directoryFolderName} Added to Directory.`, {directoryName: directoryFolderName, letterFolder}]
+            return [true, `Initialization Successful - Directory ${directoryFolderName} Was Created.`, {directoryName: directoryFolderName, letterFolder}]
         } catch (error) {
             console.error(error)
-            if (error.cause == 'conflict') return [false, `Initialization Failed - Customer Folder ${directoryFolderName} Already Exists!`]
+            if (error.cause == 'conflict') return [false, `Initialization Failed - Directory ${directoryFolderName} Already Exists!`]
             return [false, `Initialization Failed - Failed to create ${directoryFolderName} folder.`]
         }
     }
@@ -309,46 +314,46 @@ export class FileSystem {
             if ( action == 'Folder Creation') {
                 /* 
                 First, check if the folder exists within the system,
-                next, I need to check that the folder is empty and if not stop the undo process and return an error or failure message.
-                If it passes the check, I need to call the remove directory method and pass in the customer folder's path
+                Next, I need to check that the folder is empty and if not stop the undo process and return an error or failure message.
+                If it passes the check, I need to call the remove directory method and pass in the directory's path.
                 Finally, the returned value from the method can be used to determine if the directory was successfully deleted
                 */
 
-                //? Creates the folder's path with the info from the passed in undoInfo object.
-                let folderToBeRemoved = `${this._customerDirPath}/${undoInfoObj.letterFolder}/${undoInfoObj.directoryName}`
+                //? Creates the directory's path with the info from the passed in undoInfo object.
+                let directoryToBeRemoved = `${this._directoriesFolderPath}/${undoInfoObj.letterFolder}/${undoInfoObj.directoryName}`
 
-                //? Checks that the folder exists via the path and if not, an error is thrown.
-                if (!(await this._checkPath(folderToBeRemoved))) throw new Error(`Folder ${undoInfoObj.directoryName} does not exists within the ${undoInfoObj.letterFolder} directory.`, {cause: 'invalidPath'})
+                //? Checks that the directory exists via the path and if not, an error is thrown.
+                if (!(await this._checkPath(directoryToBeRemoved))) throw new Error(`Folder ${undoInfoObj.directoryName} does not exists within the ${undoInfoObj.letterFolder} directory.`, {cause: 'invalidPath'})
 
-                let hasFolderRemovalFailed = await fs.rmdir(folderToBeRemoved);
+                let hasDirectoryRemovalFailed = await fs.rmdir(directoryToBeRemoved);
 
-                if (hasFolderRemovalFailed) throw new Error(`Failed to remove directory at path ./${undoInfoObj.letterFolder}/${undoInfoObj.directoryName}.`, {cause: 'removalFailed'})
+                if (hasDirectoryRemovalFailed) throw new Error(`Failed to remove directory at path ./${undoInfoObj.letterFolder}/${undoInfoObj.directoryName}.`, {cause: 'removalFailed'})
 
-                finalTransferMessage = `Undo Action Successful - ${action} has successfully been undone. Folder ${undoInfoObj.directoryName} has been successfully removed.`
+                finalTransferMessage = `Undo Action Successful - ${action} has successfully been undone. Directory ${undoInfoObj.directoryName} has been successfully removed.`
             } else if ( action == 'File Transfer') {
                 /* 
-                First, check if the file exists within the specified customer's directory,
-                next, I need to check if the invoice name would be unique before being transferred to the invoice directory.
+                First, check if the file exists within the specified directory,
+                Next, I need to check if the invoice name would be unique before being transferred to the invoice directory.
                     And if it is not unique I need to cycle through until I find a name that is,
                 Finally, I can proceed with the copying of said file to the invoice directory
-                and finish with removing the file from the customer's folder.
+                and finish with removing the file from the storage directory.
                 */
                 // {oldInvoiceName, newInvoiceName, directoryFolderPath, directoryName, year}
 
-                let invoiceToBeRemoved = `${this._customerDirPath}/${undoInfoObj.directoryFolderPath}/${undoInfoObj.year}/${undoInfoObj.newInvoiceName}`
+                let invoiceToBeRemoved = `${this._directoriesFolderPath}/${undoInfoObj.directoryFolderPath}/${undoInfoObj.year}/${undoInfoObj.newInvoiceName}`
 
                 let invoiceFileName = undoInfoObj.newInvoiceName == undoInfoObj.oldInvoiceName ? undoInfoObj.newInvoiceName : undoInfoObj.oldInvoiceName
 
-                let [invoiceReturnPath, uniqueInvoiceName] = await this._checkInvoiceFileName(this._invoiceDirPath, invoiceFileName);
+                let [invoiceReturnPath, uniqueInvoiceName] = await this._checkInvoiceFileName(this._invoiceFolderPath, invoiceFileName);
 
                 let [isFileMoved, fileMoveErrorCause] = await this._moveFile(invoiceToBeRemoved, invoiceReturnPath);
                 if (isFileMoved) {
-                    finalTransferMessage = `Undo Action Successful - ${action} has successfully been undone. File ${undoInfoObj.newInvoiceName} has been successfully removed from ${undoInfoObj.customerName}.`;
+                    finalTransferMessage = `Undo Action Successful - ${action} has successfully been undone. File ${undoInfoObj.newInvoiceName} has been successfully removed from ${undoInfoObj.directoryFolderPath}.`;
                     if (invoiceFileName != uniqueInvoiceName) finalTransferMessage += `\nReturned invoice has been renamed from ${invoiceFileName} to ${uniqueInvoiceName}.`
                 } else {
                     switch (fileMoveErrorCause) {
                         case 'SourcePathInvalid': {
-                            throw new Error(`Invoice ${undoInfoObj.newInvoiceName} was not found in customer folder ${undoInfoObj.directoryName}.`)
+                            throw new Error(`Invoice ${undoInfoObj.newInvoiceName} was not found in directory ${undoInfoObj.directoryName}.`)
                             break;
                         }
                         case 'DestinationPathAlreadyInUse': {
@@ -371,8 +376,8 @@ export class FileSystem {
         } catch (error) {
             console.error(error)
             //* Initializes an error message variable to allow additional info to be appended to the message based on error that has occurred.
-            let errorMessage = `Undo Action Failed - Failed to undo ${action}, for ${undoInfoObj.customerName}.`;
-            if (error.code == "ENOTEMPTY") errorMessage += `\nFolder ${undoInfoObj.customerName} is not empty.`;
+            let errorMessage = `Undo Action Failed - Failed to undo ${action}, for ${undoInfoObj.directoryFolderPath}.`;
+            if (error.code == "ENOTEMPTY") errorMessage += `\nFolder ${undoInfoObj.directoryFolderPath} is not empty.`;
             if (!(error.code)) errorMessage +=`\n${error.message}`;
             console.log(errorMessage)
             return [false, errorMessage]

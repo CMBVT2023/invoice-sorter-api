@@ -19,7 +19,7 @@ backEnd.get('/:page/get-directories', async (req, res) => {
         let directories;
 
         if (pageRouteQuery == 'customer-scanned-documents') {
-            directories = await fileAccess.getAllCustomerFolders();
+            directories = await fileAccess.getAllDirectories();
         }
 
         res.send({directoriesArray: directories});
