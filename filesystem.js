@@ -1,20 +1,34 @@
 import * as fs from 'fs/promises';
 
+/**
+* @function Validates that the paths settings file exists and if it does the json object containing the various path string for all file directories is parsed and returned.
+* @param {string} pathSettingsFile - A string representing the path to the paths settings file.
+* @returns An array containing a boolean that signifies if the settings file exists, true if it does and false if not. If the file does exist then the json object within it is pushed to the array.
+* Otherwise, in the event the the paths settings file does not exists or another error occurs a null value is pushed instead.
+*/
+export async function validateDirectoryPathsFile(pathSettingsFile) {
+    try {
+        //* Attempts to check the user's permissions for a file or directory, and if it can read the permissions from said file or directory it exists.
+        await fs.access(pathSettingsFile);
+        let directoryPaths = JSON.parse(await fs.readFile(pathSettingsFile));
+        return [true, directoryPaths];
+    } catch (error) {
+        //* If an error occurs due to the path not leading to any file or directory, then the file does not exist.
+        return [false, null];
+    }
+}
+
 export class FileSystem {
-    constructor() {
+    constructor(fileSystemName) {
+        this._fileSystemName = fileSystemName;
         this._invoiceFolderPath;
         this._directoriesFolderPath;
     }
 
-    async loadDirectoryPaths(pathSettingsFile) {
+    async loadDirectoryPaths(invoicePathString, directoriesPathString) {
         try {
-            let doesPathSettingsFileExist = await this._checkPath(pathSettingsFile);
-            if (!doesPathSettingsFileExist) throw new Error('Unable to access settings file.')
-
-            let {invoicePath, directoriesFolderPath} = JSON.parse(await fs.readFile(pathSettingsFile));
-
-            this._invoiceFolderPath = invoicePath;
-            this._directoriesFolderPath = directoriesFolderPath;
+            this._invoiceFolderPath = invoicePathString;
+            this._directoriesFolderPath = directoriesPathString;
 
             let [areMainDirectoriesValid, mainPathValidatorMessage] = await this._validateMainDirectories();
             if (!areMainDirectoriesValid) throw new Error(mainPathValidatorMessage);
@@ -22,7 +36,7 @@ export class FileSystem {
             let [areLetterFoldersInitialized, letterFoldersValidatorMessage] = await this._validateLetterFolders();
             if (!areLetterFoldersInitialized) throw new Error(letterFoldersValidatorMessage);
 
-            return {valid: true, message: `${mainPathValidatorMessage}\n${letterFoldersValidatorMessage}`}
+            return {valid: true, message: `${mainPathValidatorMessage}\n${letterFoldersValidatorMessage}\n`}
         } catch (error) {
             console.error(error)
             return {valid: false, message: error.message}
@@ -32,13 +46,13 @@ export class FileSystem {
     async _validateMainDirectories() {
         let isDirectoriesFoldersPathValid = await this._checkPath(this._directoriesFolderPath);
         let isInvoiceFolderPathValid = await this._checkPath(this._invoiceFolderPath);
-        if (isDirectoriesFoldersPathValid && isInvoiceFolderPathValid) return [true, 'All Main Directory Paths are valid.'];
+        if (isDirectoriesFoldersPathValid && isInvoiceFolderPathValid) return [true, `All Main Directory Paths are valid for ${this._fileSystemName}.`];
 
         let errorMessage = 'Invalid Paths:\n';
         
         //? Checks that the two main directories exist within at their specified path else an error for them is thrown.
-        if (!isInvoiceFolderPathValid) errorMessage += `Invoice Directory does not exist - ${this._invoiceFolderPath}\n`;
-        if (!isDirectoriesFoldersPathValid) errorMessage += `Directories Folder does not exist - ${this._directoriesFolderPath}\n`;
+        if (!isInvoiceFolderPathValid) errorMessage += `${this._fileSystemName} - Invoice Directory Path ${this._invoiceFolderPath} is invalid!\n`;
+        if (!isDirectoriesFoldersPathValid) errorMessage += `${this._fileSystemName} - Directories Folder Path ${this._directoriesFolderPath} is invalid!\n`;
         
         return [false, errorMessage];
     }
@@ -58,7 +72,7 @@ export class FileSystem {
                 }
             } while (!pathValidatorResult);
 
-            return [true, `All Letter Folders are initialized.`]
+            return [true, `All Letter Folders are initialized for ${this._fileSystemName}.`]
         } catch (error) {
             return [false, error.message]
         }
