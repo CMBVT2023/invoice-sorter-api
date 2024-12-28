@@ -390,7 +390,7 @@ export class FileSystem {
         } catch (error) {
             console.error(error)
             //* Initializes an error message variable to allow additional info to be appended to the message based on error that has occurred.
-            let errorMessage = `Undo Action Failed - Failed to undo ${action}, for ${undoInfoObj.directoryFolderPath}.`;
+            let errorMessage = `Undo Action Failed - Failed to undo ${action}.`;
             if (error.code == "ENOTEMPTY") errorMessage += `\nFolder ${undoInfoObj.directoryFolderPath} is not empty.`;
             if (!(error.code)) errorMessage +=`\n${error.message}`;
             console.log(errorMessage)

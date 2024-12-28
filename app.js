@@ -116,20 +116,24 @@ backEnd.post('/:page/create-new-folder', async (req, res) => {
     }
 })
 
-// Have this accept a pageName query to determine which fileAccessClass to trigger the undo with.
-// backEnd.post('/undo-action', async (req, res) => {
-//     try {
-//         let requestQueryParameters = req.query;
+backEnd.post('/:page/undo-action', async (req, res) => {
+    try {
+        let { page: pageRouteQuery} = req.params;
+        if (!pageRouteQuery) throw new Error('Invalid Page Route Query!')
+            
+        let requestQueryParameters = req.query;
         
-//         let [isSuccessful, transferMessage, undoneActionId] = await customerScannedDocumentsFileAccess.undoPreviousAction(requestQueryParameters)
-//         let actionId = (Date.now() * Math.random()).toString(16)
+        let [isSuccessful, transferMessage, undoneActionId] = await fileAccessClasses[pageRouteQuery].undoPreviousAction(requestQueryParameters)
 
-//         res.send({result: isSuccessful ? 'Succeeded' : 'Failed', message: transferMessage, undoneActionId, id: actionId, action: 'Undo Action'})
-//     } catch (error) {
-//         console.error(`Error: ${error}`);
-//         res.status(500).send('Server Error');
-//     }
-// })
+        
+        let actionId = (Date.now() * Math.random()).toString(16)
+
+        res.send({result: isSuccessful ? 'Succeeded' : 'Failed', message: transferMessage, undoneActionId, id: actionId, action: 'Undo Action'})
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        res.status(500).send('Server Error');
+    }
+})
 
 backEnd.get('/test', async (req, res) => {
     try {
