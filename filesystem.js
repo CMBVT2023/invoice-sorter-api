@@ -362,7 +362,7 @@ export class FileSystem {
 
                 let [isFileMoved, fileMoveErrorCause] = await this._moveFile(invoiceToBeRemoved, invoiceReturnPath);
                 if (isFileMoved) {
-                    finalTransferMessage = `Undo Action Successful - ${action} has successfully been undone. File ${undoInfoObj.newInvoiceName} has been successfully removed from ${undoInfoObj.directoryFolderPath}.`;
+                    finalTransferMessage = `Undo Action Successful - ${action} has successfully been undone. File ${undoInfoObj.newInvoiceName} has been successfully removed from ${undoInfoObj.directoryName}.`;
                     if (invoiceFileName != uniqueInvoiceName) finalTransferMessage += `\nReturned invoice has been renamed from ${invoiceFileName} to ${uniqueInvoiceName}.`
                 } else {
                     switch (fileMoveErrorCause) {
