@@ -18,7 +18,7 @@ function loadFileAccessClasses() {
 
 async function startBackend() {
     try {
-        // Checks that all the constructed class' directory folders and invoice directories string attributes are valid paths before opening up the server.
+        // Checks that all the constructed class' directory folders and invoice directory string attributes are valid paths before opening up the server.
         // Also, the letter folders within the storage directories are verified, and if a letter folder is missing, one is created.
 
         let mainValidationMessage = '';
