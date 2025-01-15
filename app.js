@@ -75,8 +75,13 @@ backEnd.get('/:page/get-invoice', async (req, res) => {
 
         res.json(responseBody)
     } catch (error) {
-        console.error(`Error: ${error}`);
-        res.status(500).send('Server Error');
+        console.log(error.message)
+        if (error.message == "No Valid Files Within Invoice Directory.") {
+            res.status(503).send(`${error}`)
+        } else {
+            console.error(`Error: ${error}`);
+            res.status(500).send('Server Error');
+        }
     }
 })
 
