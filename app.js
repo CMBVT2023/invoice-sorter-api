@@ -8,7 +8,7 @@ const backEnd = express();
 const port = 3000;
 
 const fileAccessClasses = {};
-const pageNames = ['customer-scanned-documents', 'account-payables']
+const pageNames = ['customer-scanned-documents', 'accounts-payables']
 
 function loadFileAccessClasses() {
     for (const pageName of pageNames) {
