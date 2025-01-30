@@ -9,7 +9,8 @@ import * as fs from 'fs/promises';
 export async function validateDirectoryPathsFile(pathSettingsFile) {
     try {
         //* Attempts to check the user's permissions for a file or directory, and if it can read the permissions from said file or directory it exists.
-        await fs.access(pathSettingsFile);
+        await fs.access(pathSettingsFile)
+        let isFileValid = await fs.access(pathSettingsFile);
         let directoryPaths = JSON.parse(await fs.readFile(pathSettingsFile));
         return [true, directoryPaths];
     } catch (error) {
