@@ -25,7 +25,7 @@ const pool = mysql.createPool({
 * @param {NextFunction} next - Triggers the next middleware event to occur before ending the current process.
 * @returns {void}
 */
-async function loadDB(req, res, next) {
+export async function loadDB(req, res, next) {
     try {
         // Obtains access to the database and assigns it to the db key for access later down the line.
         req.db = await pool.getConnection();

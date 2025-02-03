@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 
+import { loadDB } from './dbaccess.js';
+import { registerUser, validateUserSession } from './accounts.js';
 import { FileSystem, validateDirectoryPathsFile } from './filesystem.js'
 
 const backEnd = express();
@@ -45,7 +47,13 @@ backEnd.use(cors({
     origin: 'http://localhost:5173/',
 }))
 
-backend.use()
+backEnd.use(loadDB)
+
+backEnd.post('register', registerUser)
+
+backEnd.post('login', () => {})
+
+backEnd.use(validateUserSession)
 
 backEnd.get('/:page/get-directories', async (req, res) => {
     try {
