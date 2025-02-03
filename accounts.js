@@ -14,11 +14,10 @@ dotenv.config();
 * @returns {void}
 */
 export async function validateUserSession(req, res, next) {
-    const { authorization: jwtToken } = req.headers;
-
-    if (!jwtToken) res.status(401).send("Error: User session invalid!");
-
     try {
+        const { authorization: jwtToken } = req.headers;
+    
+        if (!jwtToken) throw new Error("User session invalid!");
         // If the authentication header is valid then an attempt is made to validate the
         // received jwt token.
 
@@ -26,14 +25,14 @@ export async function validateUserSession(req, res, next) {
 
         // If the jwt is validated, the user's information is stored in the user property for access in the next middleware function.
         req.user = decodedUserSession;
+
+        // If the session is validated and no errors occurred, then the next middleware or endpoint is called.
+        await next();
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
         console.log(error)
-        res.status(500).send(`Error: Failed to validate user session!\n ${error.message}`);
+        throw new Error(`Failed to validate user session!\n ${error.message}`);
     }
-
-    // If the session is validated and no errors occurred, then the next middleware or endpoint is called.
-    await next();
 }
 
 /**
@@ -44,12 +43,11 @@ export async function validateUserSession(req, res, next) {
 * @returns {void}
 */
 export async function registerUser(req, res, next) {
-    const { userName, userKey } = req.body;
-
-    if ( !userName || !userKey ) res.status(401).send("Error: Invalid username or userkey entered!");
-
-    
     try {
+        const { userName, userKey } = req.body;
+    
+        if ( !userName || !userKey ) throw new Error("Invalid username or userkey entered!");
+
         // Defines the number of cost factor for hashing the password, as of now around 1000 attempts are made to hash the password
         const saltRound = 10;
 
@@ -59,10 +57,10 @@ export async function registerUser(req, res, next) {
         // new info into a user variable.
         const [user] = req.db.query(`
             INSERT INTO users (user_name, user_key) 
-            VALUES (:userName, :userKey);
+            VALUES (:userName, :hashedUserKey);
             `, {
                 userName,
-                userKey
+                hashedUserKey
             })
 
         // The information in the user variable is then used to generate a json web token which is returned
@@ -74,9 +72,12 @@ export async function registerUser(req, res, next) {
             // Denotes the token to be valid for only 24 hours.
             {expiresIn: "24h"}
         )
+
+        // Sends the valid user session back in the http response along with a validation message.
+        res.status(200).json({jwt: validateUserSession, success: true, message: "User successfully register."});
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
         console.log(error)
-        res.status(500).send(`Error: Failed to validate user session!\n ${error.message}`);
+        throw new Error(`Failed to validate user session!\n ${error.message}`);
     }
 }

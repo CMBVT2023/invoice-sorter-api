@@ -48,6 +48,6 @@ export async function loadDB(req, res, next) {
         console.log(error)
         // Also, if necessary, releases the database if it was successfully mounted.
         if (req.db) req.db.release();
-        res.status(500).send("Error: Failed to access database.")
+        throw new Error("Failed to access database.")
     }
 }
