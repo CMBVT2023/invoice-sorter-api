@@ -14,10 +14,13 @@ dotenv.config();
 * @returns {void}
 */
 export async function validateUserSession(req, res, next) {
+    const { authorization: jwtToken } = req.headers;
+    if (!jwtToken) {
+        res.status(403).json("User session invalid!");
+        return;
+    };
+
     try {
-        const { authorization: jwtToken } = req.headers;
-    
-        if (!jwtToken) throw new Error("User session invalid!");
         // If the authentication header is valid then an attempt is made to validate the
         // received jwt token.
 
@@ -31,7 +34,7 @@ export async function validateUserSession(req, res, next) {
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
         console.log(error)
-        throw new Error(`Failed to validate user session!\n ${error.message}`);
+        res.status(401).json(`Failed to validate user session!\n ${error.message}`);
     }
 }
 
@@ -46,7 +49,10 @@ export async function registerUser(req, res, next) {
     try {
         const { userName, userKey } = req.body;
     
-        if ( !userName || !userKey ) throw new Error("Invalid username or userkey entered!");
+        if ( !userName || !userKey ) {
+            res.status(401).json("Invalid username or userkey entered!");
+            return;
+        };
 
         // Defines the number of cost factor for hashing the password, as of now around 1000 attempts are made to hash the password
         const saltRound = 10;
@@ -61,7 +67,7 @@ export async function registerUser(req, res, next) {
             `, {
                 userName,
                 hashedUserKey
-            })
+            });
 
         // The information in the user variable is then used to generate a json web token which is returned
         // in the http response to provide the user with a valid user session that will last one day.
@@ -71,13 +77,13 @@ export async function registerUser(req, res, next) {
             process.env.JWT_KEY,
             // Denotes the token to be valid for only 24 hours.
             {expiresIn: "24h"}
-        )
+        );
 
         // Sends the valid user session back in the http response along with a validation message.
         res.status(200).json({jwt: validateUserSession, success: true, message: "User successfully register."});
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
-        console.log(error)
-        throw new Error(`Failed to validate user session!\n ${error.message}`);
+        console.log(error);
+        res.status(403).json(`Failed to validate user session!\n ${error.message}`);
     }
 }

@@ -1,8 +1,5 @@
-import express from 'express';
-import jwt from 'jsonwebtoken'
 import mysql from 'mysql2/promise'
 import dotenv from 'dotenv'
-import bcrypt from 'bcrypt'
 
 dotenv.config();
 
@@ -45,9 +42,9 @@ export async function loadDB(req, res, next) {
         req.db.release();
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
-        console.log(error)
+        console.log(error);
         // Also, if necessary, releases the database if it was successfully mounted.
         if (req.db) req.db.release();
-        throw new Error("Failed to access database.")
+        res.status(500).json(error.message);
     }
 }

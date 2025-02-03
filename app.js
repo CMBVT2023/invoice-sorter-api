@@ -49,9 +49,9 @@ backEnd.use(cors({
 
 backEnd.use(loadDB)
 
-backEnd.post('register', registerUser)
+// backEnd.post('register', registerUser)
 
-backEnd.post('login', () => {})
+// backEnd.post('login', () => {})
 
 backEnd.use(validateUserSession)
 
