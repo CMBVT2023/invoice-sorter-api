@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 
 import { loadDB } from './dbaccess.js';
-import { registerUser, validateUserSession } from './accounts.js';
+import { registerUser, validateUserSession, loginUser } from './accounts.js';
 import { FileSystem, validateDirectoryPathsFile } from './filesystem.js'
 
 const backEnd = express();
@@ -55,7 +55,7 @@ backEnd.use(loadDB)
 
 backEnd.post('/register', registerUser)
 
-// backEnd.post('login', () => {})
+backEnd.post('/login', loginUser)
 
 // Validates the request's user session via the passed in jwt
 backEnd.use(validateUserSession)

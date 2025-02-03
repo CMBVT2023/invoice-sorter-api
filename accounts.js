@@ -2,7 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken'
 import mysql from 'mysql2/promise'
 import dotenv from 'dotenv'
-import bcrypt from 'bcrypt'
+import bcrypt, { hash } from 'bcrypt'
 
 dotenv.config();
 
@@ -82,6 +82,76 @@ export async function registerUser(req, res, next) {
 
         // Sends the valid user session back in the http response along with a validation message.
         res.status(200).json({jwt: validatedSession, success: true, message: "User successfully register."});
+    } catch (error) {
+        // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
+        console.log(error);
+        // In the event that the user name is taken, alert specifically that user name is unavailable.
+        if (error.errno === 1062) {
+            res.status(401).json(`Username already taken!`);
+            return;
+        }
+        res.status(403).send(`Failed to validate user session!\n ${error.message}`);
+    }
+}
+
+/**
+* @function Login an already existing users by matching their entered password to the hashed one stored in the database.
+* @param {Request} req - Request object containing information from the http request.
+* @param {Response} res - Response object that will be populated with data and sent in response to the http request.
+* @param {NextFunction} next - Triggers the next middleware event to occur before ending the current process.
+* @returns {void}
+*/
+export async function loginUser(req, res, next) {
+    try {
+        const { enteredUserName, enteredUserKey } = req.body;
+    
+        if ( !enteredUserName || !enteredUserKey ) {
+            res.status(401).json("Provide a valid username and userkey!");
+            return;
+        };
+
+        // Uses a query to insert the new user information into the users table and stores the user's
+        // new info into a user variable.
+            //! What is returned is an array containing all matching user names, however,
+            //! since all user names need to be unique I only have to worry about accessing
+            //! one item from the array at all times.
+        const [[user]] = await req.db.query(
+            `SELECT * FROM users WHERE user_name = :enteredUserName`, {enteredUserName}
+        );
+
+        // Verifies that a user exists with said username.
+        if (!user) {
+            res.status(403).json("Invalid User Name!");
+            return;
+        }
+
+        // Compare the stored hashed password, and make sure the stored hashed password is
+        // a string. 
+        const hashedUserKey = `${user['user_key']}`;
+        const isPasswordAMatch = await bcrypt.compare(enteredUserKey, hashedUserKey);
+
+        if (!isPasswordAMatch) {
+            res.status(403).json("Invalid User Name or Password!");
+            return;
+        }
+
+        // Constructs a json object to included in the jsonwebtoken.
+        const newUserSession = {
+            is: user.id,
+            username: user.user_name
+        }
+
+        // The information in the user variable is then used to generate a json web token which is returned
+        // in the http response to provide the user with a valid user session that will last one day.
+        const validatedSession = jwt.sign(
+            newUserSession,
+            process.env.JWT_KEY,
+            // Denotes the token to be valid for only 24 hours.
+            {expiresIn: "24h"}
+        );
+
+        // Sends the valid user session back in the http response along with a validation message.
+        res.status(200).json({jwt: validatedSession, success: true, message: "User successfully signed in."});
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
         console.log(error);
