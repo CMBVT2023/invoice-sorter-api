@@ -1,5 +1,4 @@
 import express from 'express';
-import fetch from 'node-fetch';
 import cors from 'cors';
 
 import { FileSystem, validateDirectoryPathsFile } from './filesystem.js'
@@ -45,6 +44,8 @@ async function startBackend() {
 backEnd.use(cors({
     origin: 'http://localhost:5173/',
 }))
+
+backend.use()
 
 backEnd.get('/:page/get-directories', async (req, res) => {
     try {
