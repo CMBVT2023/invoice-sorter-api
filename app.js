@@ -53,9 +53,19 @@ backEnd.use(express.json())
 // Initializes a connection to the db.
 backEnd.use(loadDB)
 
+/* All of these endpoints should be ran regardless of there being a valid jwt token within the authorization headers */
 backEnd.post('/register', registerUser)
 
 backEnd.post('/login', loginUser)
+
+backEnd.get('/test', async (req, res) => {
+    try {
+        res.send({data: 'Successfully connected.'});
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        res.status(500).send('Server Error');
+    }
+})
 
 // Validates the request's user session via the passed in jwt
 backEnd.use(validateUserSession)
@@ -148,15 +158,6 @@ backEnd.post('/:page/undo-action', async (req, res) => {
         let actionId = (Date.now() * Math.random()).toString(16)
 
         res.send({result: isSuccessful ? 'Succeeded' : 'Failed', message: transferMessage, undoneActionId, id: actionId, action: 'Undo Action'})
-    } catch (error) {
-        console.error(`Error: ${error}`);
-        res.status(500).send('Server Error');
-    }
-})
-
-backEnd.get('/test', async (req, res) => {
-    try {
-        res.send({data: 'Successfully connected.'});
     } catch (error) {
         console.error(`Error: ${error}`);
         res.status(500).send('Server Error');
