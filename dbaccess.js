@@ -28,7 +28,7 @@ export async function loadDB(req, res, next) {
         req.db = await pool.getConnection();
 
         // Allows use of variables for inserting http request data safely into sql queries.
-        req.db.connection.config.namePlaceholders = true;
+        req.db.connection.config.namedPlaceholders = true;
 
         // Assigns the sql_mode which affects how the database handles data by enabling strict mode for multiple rules to improve data validation.
         await req.db.query(`SET SESSION sql_mode = "TRADITIONAL"`);

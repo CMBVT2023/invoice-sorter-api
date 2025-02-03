@@ -47,12 +47,17 @@ backEnd.use(cors({
     origin: 'http://localhost:5173/',
 }))
 
+// Parses the request's body into valid json.
+backEnd.use(express.json())
+
+// Initializes a connection to the db.
 backEnd.use(loadDB)
 
-// backEnd.post('register', registerUser)
+backEnd.post('/register', registerUser)
 
 // backEnd.post('login', () => {})
 
+// Validates the request's user session via the passed in jwt
 backEnd.use(validateUserSession)
 
 backEnd.get('/:page/get-directories', async (req, res) => {

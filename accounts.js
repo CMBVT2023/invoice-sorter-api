@@ -57,17 +57,18 @@ export async function registerUser(req, res, next) {
         // Defines the number of cost factor for hashing the password, as of now around 1000 attempts are made to hash the password
         const saltRound = 10;
 
-        const hashedUserKey = bcrypt.hash(userKey, saltRound);
+        const hashedUserKey = await bcrypt.hash(userKey, saltRound);
 
         // Uses a query to insert the new user information into the users table and stores the user's
         // new info into a user variable.
-        const [user] = req.db.query(`
-            INSERT INTO users (user_name, user_key) 
-            VALUES (:userName, :hashedUserKey);
-            `, {
+        const [user] = await req.db.query(
+            `INSERT INTO users (user_name, user_key) 
+            VALUES (:userName, :hashedUserKey)`,
+            {
                 userName,
                 hashedUserKey
-            });
+            }
+        );
 
         // The information in the user variable is then used to generate a json web token which is returned
         // in the http response to provide the user with a valid user session that will last one day.
@@ -80,10 +81,10 @@ export async function registerUser(req, res, next) {
         );
 
         // Sends the valid user session back in the http response along with a validation message.
-        res.status(200).json({jwt: validateUserSession, success: true, message: "User successfully register."});
+        res.status(200).json({jwt: validatedSession, success: true, message: "User successfully register."});
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
         console.log(error);
-        res.status(403).json(`Failed to validate user session!\n ${error.message}`);
+        res.status(403).send(`Failed to validate user session!\n ${error.message}`);
     }
 }
