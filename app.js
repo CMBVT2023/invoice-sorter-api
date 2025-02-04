@@ -67,10 +67,9 @@ backEnd.get('/test', async (req, res) => {
     }
 })
 
-// Validates the request's user session via the passed in jwt
-backEnd.use(validateUserSession)
+/* All of these endpoints first run the validation function to ensure that a valid user session is being passed through the authorization headers */
 
-backEnd.get('/:page/get-directories', async (req, res) => {
+backEnd.get('/:page/get-directories', validateUserSession, async (req, res) => {
     try {
         let { page: pageRouteQuery} = req.params;
         if (!pageRouteQuery) throw new Error('Invalid Page Route Query!')
@@ -84,7 +83,7 @@ backEnd.get('/:page/get-directories', async (req, res) => {
     }
 })
 
-backEnd.get('/:page/get-invoice', async (req, res) => {
+backEnd.get('/:page/get-invoice', validateUserSession, async (req, res) => {
     try {
         let { page: pageRouteQuery} = req.params;
         if (!pageRouteQuery) throw new Error('Invalid Page Route Query!')
@@ -109,7 +108,7 @@ backEnd.get('/:page/get-invoice', async (req, res) => {
     }
 })
 
-backEnd.post('/:page/sort-file', async (req, res) => {
+backEnd.post('/:page/sort-file', validateUserSession, async (req, res) => {
     try {
         let { page: pageRouteQuery} = req.params;
         if (!pageRouteQuery) throw new Error('Invalid Page Route Query!');
@@ -126,7 +125,7 @@ backEnd.post('/:page/sort-file', async (req, res) => {
     }
 })
 
-backEnd.post('/:page/create-new-folder', async (req, res) => {
+backEnd.post('/:page/create-new-folder', validateUserSession, async (req, res) => {
     try {
         let { page: pageRouteQuery} = req.params;
         if (!pageRouteQuery) throw new Error('Invalid Page Route Query!')
@@ -145,7 +144,7 @@ backEnd.post('/:page/create-new-folder', async (req, res) => {
     }
 })
 
-backEnd.post('/:page/undo-action', async (req, res) => {
+backEnd.post('/:page/undo-action', validateUserSession, async (req, res) => {
     try {
         let { page: pageRouteQuery} = req.params;
         if (!pageRouteQuery) throw new Error('Invalid Page Route Query!')

@@ -16,6 +16,7 @@ dotenv.config();
 export async function validateUserSession(req, res, next) {
     const { authorization: jwtToken } = req.headers;
     if (!jwtToken) {
+        console.log('test')
         res.status(403).json("User session invalid!");
         return;
     };
@@ -29,13 +30,15 @@ export async function validateUserSession(req, res, next) {
         // If the jwt is validated, the user's information is stored in the user property for access in the next middleware function.
         req.user = decodedUserSession;
 
-        // If the session is validated and no errors occurred, then the next middleware or endpoint is called.
-        await next();
     } catch (error) {
         // Logs any error to the console and sends a 500 status to indicate an error on the server's end.
         console.log(error)
         res.status(401).json(`Failed to validate user session!\n ${error.message}`);
+        return;
     }
+
+    // If the session is validated and no errors occurred, then the next middleware or endpoint is called.
+    await next();
 }
 
 /**
@@ -104,6 +107,9 @@ export async function registerUser(req, res, next) {
 export async function loginUser(req, res, next) {
     try {
         const { enteredUserName, enteredUserKey } = req.body;
+        console.log(req.body)
+
+        console.log(enteredUserName, enteredUserKey)
     
         if ( !enteredUserName || !enteredUserKey ) {
             res.status(401).json("Provide a valid username and userkey!");
